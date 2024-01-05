@@ -1,0 +1,8 @@
+*
+!.gitignore
+!README.md
+
+!.terraform.lock.hcl
+!main.tf
+!variables.tf
+!example.tfvars

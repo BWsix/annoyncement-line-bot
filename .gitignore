@@ -1,0 +1,10 @@
+*
+!.gitignore
+!README.md
+
+!derek/
+!derek/**/*
+!dashboard/
+!dashboard/**/*
+!terraform/
+!terraform/**/*
