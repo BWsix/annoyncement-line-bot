@@ -4,7 +4,8 @@ locals {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region                   = var.aws_region
+  shared_credentials_files = [var.credentials_path]
 }
 
 provider "archive" {}
@@ -83,7 +84,7 @@ resource "aws_lambda_function" "dashboard" {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token
       LINEBOT_SECRET       = var.linebot_secret
-      DYNAMODB_TABLE_NAME = local.dynamodb_table_name
+      DYNAMODB_TABLE_NAME  = local.dynamodb_table_name
     }
   }
 }
@@ -132,7 +133,7 @@ resource "aws_api_gateway_method" "linebot" {
 resource "aws_api_gateway_method" "dashboard" {
   rest_api_id   = aws_api_gateway_rest_api.api_gateway.id
   resource_id   = aws_api_gateway_resource.dashboard.id
-  http_method   = "ANY"
+  http_method   = "POST"
   authorization = "NONE"
 }
 
@@ -182,9 +183,7 @@ resource "aws_lambda_permission" "gateway_may_call_lambda_linebot" {
   function_name = aws_lambda_function.linebot.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # The /*/* portion grants access from any method on any resource
-  # within the API Gateway "REST API".
-  source_arn = "${aws_api_gateway_rest_api.api_gateway.execution_arn}/*/*"
+  source_arn = "${aws_api_gateway_rest_api.api_gateway.execution_arn}/*"
 }
 
 resource "aws_lambda_permission" "gateway_may_call_lambda_dashboard" {
@@ -193,9 +192,7 @@ resource "aws_lambda_permission" "gateway_may_call_lambda_dashboard" {
   function_name = aws_lambda_function.dashboard.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # The /*/* portion grants access from any method on any resource
-  # within the API Gateway "REST API".
-  source_arn = "${aws_api_gateway_rest_api.api_gateway.execution_arn}/*/*"
+  source_arn = "${aws_api_gateway_rest_api.api_gateway.execution_arn}/*"
 }
 
 
@@ -223,4 +220,12 @@ resource "aws_iam_role_policy" "lambda_may_use_database" {
   name   = "dynamodb_lambda_policy"
   role   = aws_iam_role.lambda.id
   policy = data.aws_iam_policy_document.lambda_may_use_database.json
+}
+
+module "cors" {
+  source  = "squidfunk/api-gateway-enable-cors/aws"
+  version = "0.3.3"
+
+  api_id          = aws_api_gateway_rest_api.api_gateway.id
+  api_resource_id = aws_api_gateway_resource.dashboard.id
 }

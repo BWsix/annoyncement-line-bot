@@ -8,27 +8,33 @@ import linebot_utils
 LINEBOT_ACCESS_TOKEN = os.getenv('LINEBOT_ACCESS_TOKEN')
 
 
-DASHBOARD_URL = os.getenv('DASHBOARD_URL') or "https://localhost:3000/dashboard"
+DASHBOARD_URL = os.getenv(
+    'DASHBOARD_URL') or "https://localhost:3000/dashboard"
 
 
 def respond(status_code: int, data: dict):
     return {
         'statusCode': status_code,
         'headers': {
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Allow-Origin': DASHBOARD_URL,
-            'Access-Control-Allow-Methods': 'OPTIONS,POST'
+            'Access-Control-Allow-Origin' : '*',
+            'Access-Control-Allow-Headers':'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            'Content-Type': 'application/json'
         },
         'body': json.dumps(data)
     }
 
 
 def handle_lambda(event, context):
-    group_id = typing.cast(dict, event).get("group_id", None)
+    print("> activation")
+
+    body = json.loads(event["body"])
+    print(body)
+
+    group_id = typing.cast(dict, body).get("group_id", None)
     print("group_id:", group_id)
-    group_name = typing.cast(dict, event).get("group_name", None)
+    group_name = typing.cast(dict, body).get("group_name", None)
     print("group_name:", group_name)
-    invite_code = typing.cast(dict, event).get("invite_code", None)
+    invite_code = typing.cast(dict, body).get("invite_code", None)
     print("invite_code", invite_code)
 
     if not type(group_id) is str:
