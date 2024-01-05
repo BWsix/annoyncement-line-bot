@@ -1,6 +1,6 @@
+import logging
 import os
 import time
-import typing
 import hashlib
 import urllib.parse
 
@@ -14,7 +14,6 @@ from linebot.v3.webhooks import (
     JoinEvent,
     LeaveEvent,
     MessageEvent,
-    TextMessageContent,
 )
 
 import db_utils
@@ -26,20 +25,23 @@ DASHBOARD_URL = os.getenv(
 
 handler = WebhookHandler(linebot_utils.LINEBOT_SECRET)
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-@handler.add(MessageEvent, message=TextMessageContent)
+
+@handler.add(MessageEvent)
 def handle_message(event):
-    print("> message event")
+    logger.info("> message event")
 
     if event.source.type != "group":
         raise Exception("Event not came from group")
 
     group_id = event.source.group_id
-    print("group id:", group_id)
+    logger.info("group id:", group_id)
     user_id = event.source.user_id
-    print("user id", user_id)
-    event_message = typing.cast(str, event.message.text).strip()
-    print("message:", event_message)
+    logger.info("user id", user_id)
+
+    message = event.message
 
     table = db_utils.get_table()
     controllingGroup = db_utils.ControllingGroup.from_table(table)
@@ -47,8 +49,8 @@ def handle_message(event):
     if not group_id == controllingGroup.group_id:
         raise Exception("Event not came from controlling group")
 
-    if controllingGroup.invite_code == "":
-        controllingGroup.invite_code = event_message
+    if message.type == "text" and controllingGroup.invite_code == "":
+        controllingGroup.invite_code = message.text.strip()
         controllingGroup.save_to_table(table)
 
         message1 = \
@@ -58,30 +60,7 @@ def handle_message(event):
         return linebot_utils.reply(event.reply_token,
                                    [message1, message2])
 
-    if controllingGroup.waiting_for_input and user_id == controllingGroup.user_invoked_command:
-        controllingGroup.waiting_for_input = False
-        controllingGroup.user_invoked_command = ""
-        controllingGroup.save_to_table(table)
-
-        if event_message.lower() == "cancel":
-            message1 = \
-                "Cancelled."
-            return linebot_utils.reply(event.reply_token,
-                                       [message1])
-
-        receiving_group_ids = [
-            g.group_id for g in controllingGroup.receiving_groups
-        ]
-        annoyncement = \
-            f"{event_message}"
-        linebot_utils.push_text(receiving_group_ids, annoyncement)
-
-        message1 = \
-            "ok"
-        return linebot_utils.reply(event.reply_token,
-                                   [message1])
-
-    if event_message.lower() == "annoy":
+    if message.type == "text" and message.text.strip().lower() == "annoy":
         controllingGroup.waiting_for_input = True
         controllingGroup.user_invoked_command = user_id
         controllingGroup.save_to_table(table)
@@ -93,29 +72,51 @@ def handle_message(event):
         return linebot_utils.reply(event.reply_token,
                                    [message1, message2])
 
+    if controllingGroup.waiting_for_input and user_id == controllingGroup.user_invoked_command:
+        controllingGroup.waiting_for_input = False
+        controllingGroup.user_invoked_command = ""
+        controllingGroup.save_to_table(table)
+
+        if message.type == "text" and message.text.strip().lower() == "cancel":
+            return linebot_utils.reply(event.reply_token, ["You cancelled an annoyncement."])
+
+        group_ids = [g.group_id for g in controllingGroup.receiving_groups]
+        group_names = sorted(
+            [g.group_name for g in controllingGroup.receiving_groups])
+
+        if message.type == "text":
+            linebot_utils.push_text(group_ids, message.text.strip())
+
+        if message.type == "image":
+            return linebot_utils.reply(event.reply_token, ["Only text messages are supported now ._."])
+
+        message1 = "The following groups received annoyncement:"
+        message2 = "\n".join(group_names)
+        return linebot_utils.reply(event.reply_token, [message1, message2])
+
 
 @handler.add(JoinEvent)
 def handle_join(event):
-    print("> join event")
+    logger.info("> join event")
 
     if event.source.type != "group":
         raise Exception("Event not came from group")
 
     group_id = event.source.group_id
-    print("group id:", group_id)
+    logger.info("group id:", group_id)
 
     with ApiClient(linebot_utils.configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         group_summary = line_bot_api.get_group_summary(group_id)
     group_name = group_summary.group_name
-    print("group name:", group_name)
+    logger.info("group name:", group_name)
 
     table = db_utils.get_table()
     item_count = table.scan()["Count"]
     joined_controlling_group = item_count == 0
 
     if joined_controlling_group:
-        print("> bot joined controlling group")
+        logger.info("> bot joined controlling group")
 
         db_utils.ControllingGroup(
             group_id, group_name).save_to_table(table)
@@ -140,7 +141,7 @@ def handle_join(event):
         return linebot_utils.reply(event.reply_token,
                                    [message1, message2, message3, message4, message5])
     else:
-        print("> bot joined receiving group")
+        logger.info("> bot joined receiving group")
 
         url_encoded_group_name = urllib.parse.quote(group_name)
         dashboard_url = f'{DASHBOARD_URL}?group_id={group_id}&group_name={url_encoded_group_name}'
@@ -159,19 +160,19 @@ def handle_join(event):
 
 @handler.add(LeaveEvent)
 def handle_leave(event):
-    print("> leave event")
+    logger.info("> leave event")
 
     if event.source.type != "group":
         raise Exception("Event not came from group")
 
     group_id = event.source.group_id
-    print("group id:", group_id)
+    logger.info("group id:", group_id)
 
     with ApiClient(linebot_utils.configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         group_summary = line_bot_api.get_group_summary(group_id)
     group_name = group_summary.group_name
-    print("group name:", group_name)
+    logger.info("group name:", group_name)
 
     table = db_utils.get_table()
     controllingGroup = db_utils.ControllingGroup.from_table(table)
@@ -183,9 +184,9 @@ def handle_leave(event):
     controllingGroup.receiving_groups.remove(receiving_group)
     controllingGroup.save_to_table(table)
 
-    message = \
+    message1 = \
         f"{receiving_group.group_name} kicked me out of their group."
-    return linebot_utils.push_text([controllingGroup.group_id], message)
+    return linebot_utils.push_text([controllingGroup.group_id], message1)
 
 
 def handle_lambda(event, context):

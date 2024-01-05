@@ -1,3 +1,4 @@
+import logging
 import os
 import json
 import typing
@@ -11,13 +12,16 @@ LINEBOT_ACCESS_TOKEN = os.getenv('LINEBOT_ACCESS_TOKEN')
 DASHBOARD_URL = os.getenv(
     'DASHBOARD_URL') or "https://localhost:3000/dashboard"
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 
 def respond(status_code: int, data: dict):
     return {
         'statusCode': status_code,
         'headers': {
-            'Access-Control-Allow-Origin' : '*',
-            'Access-Control-Allow-Headers':'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
             'Content-Type': 'application/json'
         },
         'body': json.dumps(data)
@@ -25,17 +29,17 @@ def respond(status_code: int, data: dict):
 
 
 def handle_lambda(event, context):
-    print("> activation")
+    logger.info("> activation")
 
     body = json.loads(event["body"])
-    print(body)
+    logger.info(body)
 
     group_id = typing.cast(dict, body).get("group_id", None)
-    print("group_id:", group_id)
+    logger.info("group_id:", group_id)
     group_name = typing.cast(dict, body).get("group_name", None)
-    print("group_name:", group_name)
+    logger.info("group_name:", group_name)
     invite_code = typing.cast(dict, body).get("invite_code", None)
-    print("invite_code", invite_code)
+    logger.info("invite_code", invite_code)
 
     if not type(group_id) is str:
         return respond(400, {"status": "error", "data": "Bad input"})

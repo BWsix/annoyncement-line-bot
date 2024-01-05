@@ -12,10 +12,15 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import axios from "axios";
 
-type ActivationResult = {
-  status: "success" | "error";
-  data: string;
-};
+type ActivationResult =
+  | {
+      status: "success" | "error";
+      data: string;
+    }
+  | {
+      status: undefined;
+      data: undefined;
+    };
 
 export default function HadhboardPage() {
   const router = useRouter();
@@ -37,14 +42,18 @@ export default function HadhboardPage() {
       })
       .then((res) => {
         if (res.status != 200) {
+          setError("Unexpected error occured.");
           return;
         }
+
         const { status, data } = res.data as ActivationResult;
-        if (status === "error") {
+        if (status === "success") {
+          setResult(data);
+          return;
+        } else if (status === "error") {
           setError(data);
           setDisalbed(false);
-        } else {
-          setResult(data);
+          return;
         }
       });
   };
@@ -69,6 +78,7 @@ export default function HadhboardPage() {
             description="Can be found in administrators' group."
             value={code}
             onChange={(e) => setCode(e.currentTarget.value)}
+            disabled={disabled}
             error={error}
           />
           <Button disabled={disabled} onClick={() => handleSubmit()}>
