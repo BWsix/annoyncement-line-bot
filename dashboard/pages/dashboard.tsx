@@ -33,29 +33,38 @@ export default function HadhboardPage() {
   const [disabled, setDisalbed] = useState(false);
 
   const handleSubmit = () => {
+    setError("");
     setDisalbed(true);
+
     axios
       .post(process.env.NEXT_PUBLIC_ACTIVATION_API, {
         group_id,
         group_name,
         invite_code: code,
       })
-      .then((res) => {
-        if (res.status != 200) {
-          setError("Unexpected error occured.");
-          return;
-        }
+      .then(
+        (res) => {
+          if (res.status != 200) {
+            setError("Unexpected error occured.");
+            return;
+          }
 
-        const { status, data } = res.data as ActivationResult;
-        if (status === "success") {
-          setResult(data);
-          return;
-        } else if (status === "error") {
-          setError(data);
-          setDisalbed(false);
-          return;
+          const { status, data } = res.data as ActivationResult;
+          if (status === "success") {
+            setResult(data);
+            return;
+          } else if (status === "error") {
+            setError(data);
+            setDisalbed(false);
+            return;
+          }
+        },
+        () => {
+          setError(
+            "Unexpected error occured. Please stop trying and contact the admin."
+          );
         }
-      });
+      );
   };
 
   return (

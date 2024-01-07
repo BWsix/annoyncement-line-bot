@@ -2,8 +2,8 @@
 !.gitignore
 !README.md
 
-!derek/
-!derek/**/*
+!function/
+!function/**/*
 !dashboard/
 !dashboard/**/*
 !terraform/

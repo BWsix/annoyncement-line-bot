@@ -1,12 +1,18 @@
 from dataclasses import dataclass, asdict, field
 import os
 import typing
+import logging
 
 import boto3
 from boto3_type_annotations.dynamodb import ServiceResource, Table
 
-DYNAMODB_TABLE_NAME = os.getenv(
-    'DYNAMODB_TABLE_NAME') or "annoyncement-line-bot"
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+DYNAMODB_TABLE_NAME = os.getenv('DYNAMODB_TABLE_NAME') or None
+if DYNAMODB_TABLE_NAME is None:
+    logger.error("'DYNAMODB_TABLE_NAME' environment variable not found")
+    exit(1)
 
 
 def get_table():
@@ -28,11 +34,19 @@ class ReceivingGroup(Group):
 @dataclass
 class ControllingGroup(Group):
     invite_code: str = field(default="")
-
     waiting_for_input: bool = field(default=False)
     user_invoked_command: str = field(default="")
-
     receiving_groups: list[ReceivingGroup] = field(default_factory=list)
+
+    @property
+    def receiving_group_ids(self):
+        group_ids = [g.group_id for g in self.receiving_groups]
+        return group_ids
+
+    @property
+    def receiving_group_names(self):
+        group_names = sorted([g.group_name for g in self.receiving_groups])
+        return group_names
 
     @staticmethod
     def from_table(table: Table):
@@ -56,4 +70,4 @@ class ControllingGroup(Group):
 
     def save_to_table(self, table: Table):
         table.put_item(Item=asdict(self))
-        print("Saved item table:", asdict(self))
+        logger.info(f"Saved item table: {asdict(self)}")

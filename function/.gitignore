@@ -3,7 +3,8 @@
 !README.md
 
 !requirements.txt
+!activation.py
 !bot.py
-!dashboard.py
 !db_utils.py
 !linebot_utils.py
+!s3_utils.py
