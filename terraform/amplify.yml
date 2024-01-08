@@ -4,14 +4,16 @@ applications:
       phases:
         preBuild:
           commands:
-            - yarn install
+            - nvm use 18
+            - npm install
         build:
           commands:
-            - yarn run build
+            - nvm use 18
+            - npm run build
       artifacts:
-        baseDirectory: .next
+        baseDirectory: out
         files:
-          - '**/*'
+          - "**/*"
       cache:
         paths:
           - node_modules/**/*

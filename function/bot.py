@@ -18,8 +18,6 @@ from linebot.v3.webhooks import (
     VideoMessageContent,
 )
 
-import db_utils
-import s3_utils
 import linebot_utils
 
 logger = logging.getLogger()
@@ -30,6 +28,9 @@ handler = WebhookHandler(linebot_utils.LINEBOT_SECRET)
 
 @handler.add(MessageEvent)
 def handle_message(event: MessageEvent):
+    import db_utils
+    import s3_utils
+
     logger.info("> message event")
     if event.source is None:
         return logger.warn("> event with no source")
@@ -106,6 +107,8 @@ def handle_message(event: MessageEvent):
 
 @handler.add(JoinEvent)
 def handle_join(event):
+    import db_utils
+
     logger.info("> join event")
 
     if event.source.type != "group":

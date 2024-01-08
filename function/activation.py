@@ -1,16 +1,15 @@
 import logging
-import os
 import json
 import typing
 
-import db_utils
-import linebot_utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# TODO: when the function errors out, this header is not returned and web client shows cors error
+
 def respond(status_code: int, data: dict):
+    # TODO: when the function errors out, this header is not returned and web client shows cors error
+
     return {
         'statusCode': status_code,
         'headers': {
@@ -22,7 +21,10 @@ def respond(status_code: int, data: dict):
     }
 
 
-def lambda_handle_activation(event, context):
+def lambda_handle_activation(event, _):
+    import linebot_utils
+    import db_utils
+
     logger.info("> activation")
     logger.info(event)
 
@@ -58,7 +60,8 @@ def lambda_handle_activation(event, context):
     linebot_utils.push_text([group_id], [message1], silence=True)
 
     message1 = f"{receivingGroup.group_name} is now receiving annoyncement"
-    linebot_utils.push_text([controllingGroup.group_id], [message1], silence=True)
+    linebot_utils.push_text([controllingGroup.group_id], [
+                            message1], silence=True)
 
     message = \
         "Annoyncement bot has been successfully configured!\n"\

@@ -123,6 +123,9 @@ resource "aws_cloudwatch_log_group" "lambda_update_webhook_url" {
 }
 resource "aws_lambda_invocation" "update_webhook_url" {
   function_name = aws_lambda_function.linebot_update_webhook_url.function_name
+  depends_on = [
+    aws_api_gateway_deployment.prod
+  ]
   input = jsonencode({
     url = "${aws_api_gateway_deployment.prod.invoke_url}/linebot"
   })
@@ -167,8 +170,8 @@ resource "aws_api_gateway_rest_api" "api_gateway" {
 resource "aws_api_gateway_deployment" "prod" {
   rest_api_id = aws_api_gateway_rest_api.api_gateway.id
   depends_on = [
-    aws_api_gateway_integration.lambda_linebot,
     aws_api_gateway_integration.lambda_activate,
+    aws_api_gateway_integration.lambda_linebot,
   ]
   triggers = {
     redeployment = sha1(jsonencode(aws_api_gateway_rest_api.api_gateway.body))
@@ -256,12 +259,46 @@ resource "aws_s3_bucket_lifecycle_configuration" "files" {
 // end of s3 butcket
 
 // start of amplify
+resource "aws_iam_role" "amplify" {
+  assume_role_policy = data.aws_iam_policy_document.amplify.json
+}
+data "aws_iam_policy_document" "amplify" {
+  statement {
+    effect = "Allow"
+    principals {
+      identifiers = ["amplify.amazonaws.com"]
+      type        = "Service"
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+resource "aws_iam_role_policy_attachment" "amplify" {
+  role       = aws_iam_role.amplify.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess-Amplify"
+}
 resource "aws_amplify_app" "dashboard" {
-  name       = "${var.project_name}-dashboard"
-  repository = var.repository
-  build_spec = file("amplify.yml")
+  name                 = "${var.project_name}-dashboard"
+  repository           = var.repository
+  build_spec           = file("amplify.yml")
+  access_token         = var.github_access_token
+  iam_service_role_arn = aws_iam_role.amplify.arn
+}
+resource "aws_amplify_branch" "dashboard_master" {
+  app_id            = aws_amplify_app.dashboard.id
+  branch_name       = "master"
+  enable_auto_build = true
+  framework         = "React"
+  stage             = "PRODUCTION"
   environment_variables = {
     NEXT_PUBLIC_ACTIVATION_API = "${aws_api_gateway_deployment.prod.invoke_url}/activate"
   }
+}
+resource "aws_amplify_webhook" "dashboard" {
+  app_id      = aws_amplify_app.dashboard.id
+  branch_name = aws_amplify_branch.dashboard_master.branch_name
+}
+data "http" "trigger_build" {
+  url    = aws_amplify_webhook.dashboard.url
+  method = "POST"
 }
 // end of amplify

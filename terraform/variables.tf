@@ -25,6 +25,10 @@ variable "linebot_secret" {
   description = "Line bot secret"
 }
 
+variable "github_access_token" {
+  description = "Github access token"
+}
+
 variable "repository" {
   description = "Repository for amplify, used to deploy dashboard"
 }
