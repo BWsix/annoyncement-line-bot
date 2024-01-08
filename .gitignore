@@ -8,3 +8,5 @@
 !dashboard/**/*
 !terraform/
 !terraform/**/*
+!assets/
+!assets/**/*
