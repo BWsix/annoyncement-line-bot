@@ -82,7 +82,7 @@ resource "aws_lambda_function" "linebot" {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token
       LINEBOT_SECRET       = var.linebot_secret
-      DASHBOARD_URL        = var.dashboard_url
+      DASHBOARD_URL        = "${aws_amplify_app.dashboard.default_domain}/dashboard"
       DYNAMODB_TABLE_NAME  = local.dynamodb_table_name
       S3_BUCKET_NAME       = aws_s3_bucket.files.bucket
     }
@@ -196,9 +196,6 @@ resource "aws_api_gateway_integration" "lambda_linebot" {
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.linebot.invoke_arn
 }
-output "linebot_webhook_url" {
-  value = "${aws_api_gateway_deployment.prod.invoke_url}/linebot"
-}
 
 // gateway: activation related
 resource "aws_api_gateway_resource" "activate" {
@@ -225,9 +222,6 @@ module "cors_for_activation" {
   version         = "0.3.3"
   api_id          = aws_api_gateway_rest_api.api_gateway.id
   api_resource_id = aws_api_gateway_resource.activate.id
-}
-output "api_endpoint_for_activation" {
-  value = "${aws_api_gateway_deployment.prod.invoke_url}/activate"
 }
 // end of api gateway
 
@@ -260,3 +254,14 @@ resource "aws_s3_bucket_lifecycle_configuration" "files" {
   }
 }
 // end of s3 butcket
+
+// start of amplify
+resource "aws_amplify_app" "dashboard" {
+  name       = "${var.project_name}-dashboard"
+  repository = var.repository
+  build_spec = file("amplify.yml")
+  environment_variables = {
+    NEXT_PUBLIC_ACTIVATION_API = "${aws_api_gateway_deployment.prod.invoke_url}/activate"
+  }
+}
+// end of amplify
