@@ -61,11 +61,25 @@ data "archive_file" "lambda_source" {
   source_dir  = local.bot_dir
   excludes    = ["venv", "__pycache__"]
 }
-module "lambda_dependency_layer" {
-  source              = "git::https://github.com/enter-at/terraform-aws-lambda-layer.git?ref=main"
+resource "null_resource" "install_dependencies" {
+  triggers = {
+    reinstall = filebase64sha256("${local.bot_dir}/requirements.txt")
+  }
+  provisioner "local-exec" {
+    command = "pip install --target layer/python --requirement=${local.bot_dir}/requirements.txt"
+  }
+}
+data "archive_file" "layer" {
+  type        = "zip"
+  output_path = "archives/dependencies.zip"
+  source_dir = "layer"
+  depends_on = [ null_resource.install_dependencies ]
+}
+resource "aws_lambda_layer_version" "lambda_dependency_layer" {
   layer_name          = "${var.project_name}-dependencies"
-  package_file        = "${local.bot_dir}/requirements.txt"
   compatible_runtimes = [var.runtime]
+  filename            = data.archive_file.layer.output_path
+  source_code_hash    = data.archive_file.layer.output_base64sha256
 }
 
 // lambda: linebot
@@ -77,7 +91,7 @@ resource "aws_lambda_function" "linebot" {
   handler          = "bot.lambda_handle_linebot"
   runtime          = var.runtime
   timeout          = 30
-  layers           = ["${module.lambda_dependency_layer.arn}"]
+  layers           = [aws_lambda_layer_version.lambda_dependency_layer.arn]
   environment {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token
@@ -109,7 +123,7 @@ resource "aws_lambda_function" "linebot_update_webhook_url" {
   handler          = "bot.lambda_update_webhook_url"
   runtime          = var.runtime
   timeout          = 30
-  layers           = ["${module.lambda_dependency_layer.arn}"]
+  layers           = [aws_lambda_layer_version.lambda_dependency_layer.arn]
   environment {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token
@@ -140,7 +154,7 @@ resource "aws_lambda_function" "activation" {
   handler          = "activation.lambda_handle_activation"
   runtime          = var.runtime
   timeout          = 30
-  layers           = ["${module.lambda_dependency_layer.arn}"]
+  layers           = [aws_lambda_layer_version.lambda_dependency_layer.arn]
   environment {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token

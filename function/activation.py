@@ -2,6 +2,8 @@ import logging
 import json
 import typing
 
+import linebot_utils
+import db_utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -22,9 +24,6 @@ def respond(status_code: int, data: dict):
 
 
 def lambda_handle_activation(event, _):
-    import linebot_utils
-    import db_utils
-
     logger.info("> activation")
     logger.info(event)
 
