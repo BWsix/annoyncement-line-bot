@@ -82,7 +82,7 @@ resource "aws_lambda_function" "linebot" {
     variables = {
       LINEBOT_ACCESS_TOKEN = var.linebot_access_token
       LINEBOT_SECRET       = var.linebot_secret
-      DASHBOARD_URL        = "${aws_amplify_app.dashboard.default_domain}/dashboard"
+      DASHBOARD_URL        = "https://master.${aws_amplify_app.dashboard.default_domain}/dashboard"
       DYNAMODB_TABLE_NAME  = local.dynamodb_table_name
       S3_BUCKET_NAME       = aws_s3_bucket.files.bucket
     }
