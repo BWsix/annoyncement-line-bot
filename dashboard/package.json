@@ -1,5 +1,6 @@
 {
   "name": "mantine-minimal-next-template",
+  "description": "Generated from https://github.com/mantinedev/next-pages-min-template",
   "version": "0.1.0",
   "private": true,
   "scripts": {

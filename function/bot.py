@@ -124,7 +124,7 @@ def handle_join(event):
     logger.info(f"group name: {group_name}")
 
     table = db_utils.get_table()
-    item_count = table.scan()["Count"]
+    item_count = table.scan()["Count"] # scan() returns real-time data
     joined_controlling_group = item_count == 0
 
     if joined_controlling_group:

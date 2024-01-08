@@ -21,10 +21,15 @@ def upload_to_s3(file_path: str):
 
     # TODO: using file name as key may introduce collision since they're the hash of the content
     bucket.upload_file(Filename=file_path, Key=file_name)
-    signedUrl = typing.cast(str, s3Client.generate_presigned_url('get_object', {
-        "Bucket": bucket.name,
-        "Key": file_name,
-    }))
-    logger.info(f"Upload completed, url: {signedUrl}")
+    A_MONTH = 60 * 60 * 24 * 30
+    presigned_url = typing.cast(str, s3Client.generate_presigned_url(
+        ClientMethod='get_object',
+        Params={
+            "Bucket": bucket.name,
+            "Key": file_name,
+        },
+        ExpiresIn=A_MONTH,
+    ))
+    logger.info(f"Upload completed, url: {presigned_url}")
 
-    return signedUrl
+    return presigned_url
