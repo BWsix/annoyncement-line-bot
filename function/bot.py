@@ -137,18 +137,16 @@ def handle_join(event):
         hashed_time = hashlib.sha256(current_time.encode()).hexdigest()
         generated_invitation_code = hashed_time[:4]
 
-        message1 = "Hi, Derek here o/"
-        message2 = \
+        message1 = \
             "Usage:\n"\
             "To make an annoyncement, type 'annoy' or 'Annoy' as a command in the group chat.\n"\
-            "Wait for Derek's reply and send a message as an annoyncement."
-        message3 = \
+            "Wait for my reply and send a message as an annoyncement."
+        message2 = \
             "Before making annoyncements, let's first configure the invite code for the dashboard.\n"\
             "Below is a randomly generated string that you can use as an invite code:"
-        message4 = generated_invitation_code
-        message5 = "Now, please enter something into the chat as an invite code:"
-        return linebot_utils.reply(event.reply_token,
-                                   [message1, message2, message3, message4, message5])
+        message3 = generated_invitation_code
+        message4 = "Now, please enter something into the chat as an invite code:"
+        return linebot_utils.reply(event.reply_token, [message1, message2, message3, message4])
     else:
         logger.info("> bot joined receiving group")
 
@@ -161,15 +159,12 @@ def handle_join(event):
         dashboard_url = f'{DASHBOARD_URL}?group_id={group_id}&group_name={url_encoded_group_name}'
 
         message1 = \
-            "Hi, Derek here o/"
-        message2 = \
             "Annoyncement line bot is a self-hosted annoyncement system developed by VFLC.\n"\
             "For more information please visit https://github.com/BWsix/annoyncement-line-bot"
-        message3 = \
+        message2 = \
             "For group admins to configure the annoyncement bot, please visit the link below:\n"\
             f"{dashboard_url}"
-        return linebot_utils.reply(event.reply_token,
-                                   [message1, message2, message3])
+        return linebot_utils.reply(event.reply_token, [message1, message2])
 
 
 # TODO: investigate the leave event
@@ -205,7 +200,7 @@ def handle_join(event):
 
 
 def lambda_update_webhook_url(event, _):
-    logger.info("udpate url")
+    logger.info("update webhook url")
     logger.info(event)
     linebot_utils.update_webhook_url(event['url'])
 
