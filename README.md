@@ -2,6 +2,12 @@
 
 A Line bot for making announcements from one Line group to multiple Line groups.
 
+###
+
+| Make annoyncement                               | Activate bot with invite code          |
+| :---------------------------------------------- | :------------------------------------- |
+| ![annoyncement](./assets/make_annoyncement.gif) | ![invite bot](./assets/invite_bot.gif) |
+
 ### How to run the bot
 
 #### Requirements
@@ -29,9 +35,10 @@ A Line bot for making announcements from one Line group to multiple Line groups.
       3. Create a new channel and select `Messaging API`
       4. In `Basic settings`, scroll to bottom and copy `Channel secret`
          1. In `prod.tfvars`, replace `linebot_secret` with your secret
-      5. In `Messaging API`, scroll to bottom and issue a `Channel access token (long-lived)`
+      5. In `Messaging API`>`Webhook settings`, type `https://example.com` into `Webhook URL` and toggle `Use webhook`.
+      6. In `Messaging API`, scroll to bottom and issue a `Channel access token (long-lived)`
          1. In `prod.tfvars`, replace `linebot_token` with your token
-      6. In `Messaging API`, scan the QRcode to add the bot as a friend
+      7. In `Messaging API`, scan the QRcode to add the bot as a friend
    4. Configure the line bot
       1. Go to <https://manager.line.biz/> and go the settings page by click on your bot
       2. Click `設定` on the top right corner of the page
@@ -55,3 +62,9 @@ A Line bot for making announcements from one Line group to multiple Line groups.
       2. Wait until the bot replies.
       3. Enter a text message or image message as your announcement
       4. It will show up on the receiving groups shortly
+
+8. Clean up
+   - Delete AWS resouces
+     1. In `terraform` run `terraform destroy -var-file prod.tfvars`
+   - Remove line bot
+   - Remove Github personal access token
